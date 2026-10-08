@@ -1,4 +1,17 @@
-import type { ExpenseCategory, PaymentMethod } from "@/lib/receipts/constants";
+import type {
+  ExpenseCategory,
+  PaymentMethod,
+  ReceiptStatus,
+} from "@/lib/receipts/constants";
+
+export const STATUS_LABELS: Record<ReceiptStatus, string> = {
+  uploading: "Uploading",
+  uploaded: "Uploaded",
+  processing: "Processing",
+  needs_review: "Needs review",
+  saved: "Saved",
+  failed: "Failed",
+};
 
 export const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   food_and_dining: "Food & dining",

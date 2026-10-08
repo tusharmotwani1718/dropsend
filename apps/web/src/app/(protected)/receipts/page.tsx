@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { ReceiptsTable } from "@/components/receipts/receipts-table";
+import { Suspense } from "react";
+import {
+  ReceiptsTable,
+  ReceiptsTableSkeleton,
+} from "@/components/receipts/receipts-table";
 
 export const metadata: Metadata = { title: "Receipts" };
 
@@ -14,7 +18,10 @@ export default function ReceiptsPage() {
           All your uploaded receipts and the details read from them.
         </p>
       </div>
-      <ReceiptsTable />
+      {/* The table reads its sort and filters from the URL. */}
+      <Suspense fallback={<ReceiptsTableSkeleton />}>
+        <ReceiptsTable />
+      </Suspense>
     </div>
   );
 }
