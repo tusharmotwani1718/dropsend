@@ -58,11 +58,13 @@ export function useReceipts({ all = false } = {}) {
 
           // New rows and newly verified images need a signed preview URL,
           // which only the server can create, and newly extracted receipts
-          // need their extraction, which isn't part of the receipts row.
+          // need their extraction (and flagged duplicates the receipt they
+          // match), which aren't part of the receipts row.
           if (
             payload.eventType === "INSERT" ||
             updated.status === "processing" ||
-            updated.status === "needs_review"
+            updated.status === "needs_review" ||
+            updated.status === "duplicate"
           ) {
             void refresh();
           }

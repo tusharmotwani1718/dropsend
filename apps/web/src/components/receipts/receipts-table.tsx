@@ -2,6 +2,7 @@
 
 import { ExternalLink, FileSearch, ImageIcon } from "lucide-react";
 import { useState } from "react";
+import { DuplicateActions, DuplicateNote } from "@/components/receipts/duplicate-actions";
 import { ExtractionSheet } from "@/components/receipts/extraction-sheet";
 import { ReceiptActions } from "@/components/receipts/receipt-actions";
 import { ReceiptStatusBadge } from "@/components/receipts/receipt-status-badge";
@@ -21,13 +22,21 @@ import type { ReceiptWithPreview } from "@/lib/receipts/client";
 import type { ReceiptStatus } from "@/lib/receipts/constants";
 import { CATEGORY_LABELS } from "@/lib/receipts/labels";
 
-/** Statuses that have an extraction to view. */
-const EXTRACTED_STATUSES: ReceiptStatus[] = ["needs_review", "saved"];
+/**
+ * Statuses that can have an extraction to view. A duplicate only has one if
+ * it was flagged after OCR (not on an identical image).
+ */
+const EXTRACTED_STATUSES: ReceiptStatus[] = ["needs_review", "saved", "duplicate"];
 
 export function ReceiptsTable() {
   const { receipts, loading, error, refresh } = useReceipts({ all: true });
   const [viewing, setViewing] = useState<ReceiptWithPreview | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  function view(receipt: ReceiptWithPreview) {
+    setViewing(receipt);
+    setSheetOpen(true);
+  }
 
   if (loading) {
     return (
@@ -71,17 +80,20 @@ export function ReceiptsTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {receipts.map((receipt) => (
-              <ReceiptTableRow
-                key={receipt.id}
-                receipt={receipt}
-                onView={() => {
-                  setViewing(receipt);
-                  setSheetOpen(true);
-                }}
-                onChange={() => void refresh()}
-              />
-            ))}
+            {receipts.map((receipt) => {
+              const original = receipt.original
+                ? receipts.find((r) => r.id === receipt.original?.id)
+                : undefined;
+              return (
+                <ReceiptTableRow
+                  key={receipt.id}
+                  receipt={receipt}
+                  onView={() => view(receipt)}
+                  onViewOriginal={original && (() => view(original))}
+                  onChange={() => void refresh()}
+                />
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -99,10 +111,13 @@ export function ReceiptsTable() {
 function ReceiptTableRow({
   receipt,
   onView,
+  onViewOriginal,
   onChange,
 }: {
   receipt: ReceiptWithPreview;
   onView: () => void;
+  /** Opens the receipt a flagged duplicate matches, if it's in the table. */
+  onViewOriginal?: () => void;
   onChange: () => void;
 }) {
   const { extraction } = receipt;
@@ -138,6 +153,14 @@ function ReceiptTableRow({
               title={receipt.error}
             >
               {receipt.error}
+            </span>
+          )}
+          {receipt.status === "duplicate" && (
+            <span className="max-w-56 text-xs text-muted-foreground">
+              <DuplicateNote
+                original={receipt.original}
+                onViewOriginal={onViewOriginal}
+              />
             </span>
           )}
         </div>
@@ -176,7 +199,11 @@ function ReceiptTableRow({
             <FileSearch />
             View extraction
           </Button>
-          <ReceiptActions receipt={receipt} showRetry={false} onChange={onChange} />
+          {receipt.status === "duplicate" ? (
+            <DuplicateActions receipt={receipt} onChange={onChange} />
+          ) : (
+            <ReceiptActions receipt={receipt} showRetry={false} onChange={onChange} />
+          )}
         </div>
       </TableCell>
     </TableRow>

@@ -25,6 +25,7 @@ export const RECEIPT_STATUSES = [
   "processing",
   "needs_review",
   "saved",
+  "duplicate", // probable duplicate of `duplicate_of`; user discards or keeps it
   "failed",
 ] as const;
 
@@ -41,8 +42,19 @@ export type Receipt = {
   image_hash: string | null;
   status: ReceiptStatus;
   error: string | null;
+  /** The receipt this one was flagged as a probable duplicate of. */
+  duplicate_of: string | null;
+  /** True once the user chose to keep a flagged duplicate. */
+  duplicate_dismissed: boolean;
   created_at: string;
   updated_at: string;
+};
+
+/** The receipt a flagged duplicate matches. */
+export type DuplicateOriginal = {
+  id: string;
+  original_filename: string;
+  created_at: string;
 };
 
 /** The extracted fields shown alongside a receipt in lists. */
