@@ -48,7 +48,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {NAV_ITEMS.map((item) => (
-                <SidebarMenuItem key={item.href}>
+                <SidebarMenuItem key={item.href} className="my-1">
                   <SidebarMenuButton
                     isActive={pathname.startsWith(item.href)}
                     render={
