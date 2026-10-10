@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/auth/get-user";
 import {
   RECEIPTS_BUCKET,
+  type DuplicateOriginal,
   type ExtractionSummary,
   type Receipt,
 } from "@/lib/receipts/constants";
@@ -17,8 +18,9 @@ type ReceiptRow = Receipt & {
 };
 
 /**
- * Lists the user's receipts, newest first, with signed preview URLs and the
- * extracted summary fields. Returns the most recent 50 unless `?all=true`.
+ * Lists the user's receipts, newest first, with signed preview URLs, the
+ * extracted summary fields and, for flagged duplicates, the receipt they
+ * match (`original`). Returns the most recent 50 unless `?all=true`.
  */
 export async function GET(request: NextRequest) {
   const { supabase, userId } = await getSessionUser();
@@ -41,6 +43,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Looked up separately: the original may be older than the listed receipts.
+  const originals = new Map<string, DuplicateOriginal>();
+  const originalIds = [
+    ...new Set(
+      data
+        .filter((receipt) => receipt.status === "duplicate" && receipt.duplicate_of)
+        .map((receipt) => receipt.duplicate_of as string),
+    ),
+  ];
+  if (originalIds.length > 0) {
+    const { data: rows } = await supabase
+      .from("receipts")
+      .select("id, original_filename, created_at")
+      .in("id", originalIds)
+      .returns<DuplicateOriginal[]>();
+    rows?.forEach((row) => originals.set(row.id, row));
+  }
+
   const previewUrls = new Map<string, string>();
   if (data.length > 0) {
     const { data: signed } = await supabase.storage
@@ -61,6 +81,10 @@ export async function GET(request: NextRequest) {
       extraction: Array.isArray(receipt.extraction)
         ? (receipt.extraction[0] ?? null)
         : receipt.extraction,
+      original:
+        receipt.status === "duplicate" && receipt.duplicate_of
+          ? (originals.get(receipt.duplicate_of) ?? null)
+          : null,
       preview_url: previewUrls.get(receipt.storage_path) ?? null,
     })),
   });

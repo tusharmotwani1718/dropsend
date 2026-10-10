@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   MAX_RECEIPTS_PER_BATCH,
   RECEIPTS_BUCKET,
+  type DuplicateOriginal,
   type ExtractionDetail,
   type ExtractionSummary,
   type Receipt,
@@ -14,6 +15,8 @@ import {
 export type ReceiptWithPreview = Receipt & {
   preview_url: string | null;
   extraction: ExtractionSummary | null;
+  /** For a flagged duplicate, the receipt it matches (null if deleted). */
+  original: DuplicateOriginal | null;
 };
 
 type Result<T = null> = { ok: true; data: T } | { ok: false; error: string };
@@ -174,6 +177,14 @@ export async function retryReceipt(receiptId: string, file?: File) {
   }
 
   return { ok: true, data: null } as const;
+}
+
+/** "Keep anyway" for a receipt flagged as a probable duplicate. */
+export function keepReceipt(receiptId: string) {
+  return request<{ status: "needs_review" | "processing" }>(
+    `/api/receipts/${receiptId}/keep`,
+    { method: "POST" },
+  );
 }
 
 export function deleteReceipt(receiptId: string) {

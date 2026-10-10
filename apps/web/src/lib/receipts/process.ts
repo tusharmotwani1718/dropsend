@@ -31,7 +31,8 @@ function matchesMimeType(bytes: Uint8Array, mimeType: ReceiptMimeType) {
 
 /**
  * Verifies an uploaded receipt image and moves the receipt from `uploading`
- * to `processing` (or `failed`). Status changes reach the client via Realtime.
+ * to `processing`, `duplicate` (the user already has this exact image) or
+ * `failed`. Status changes reach the client via Realtime.
  * Returns true if the receipt is ready for OCR.
  *
  * Runs inside the Inngest worker. Problems with the file itself fail the
@@ -83,17 +84,16 @@ export async function verifyReceipt(receiptId: string) {
 
   const imageHash = createHash("sha256").update(bytes).digest("hex");
 
-  const { data: updated, error: updateError } = await admin
-    .from("receipts")
-    .update({ status: "processing", image_hash: imageHash, error: null })
-    .eq("id", receiptId)
-    .eq("status", "uploading")
-    .select("id");
+  // Moves it to `processing`, or to `duplicate` (no OCR) on an image match.
+  const { data: status, error: updateError } = await admin.rpc(
+    "mark_receipt_verified",
+    { p_receipt_id: receiptId, p_image_hash: imageHash },
+  );
   if (updateError) {
     throw new Error(`Failed to update receipt: ${updateError.message}`);
   }
-  // Empty if the receipt was deleted in the meantime.
-  return updated.length > 0;
+  // Null if the receipt was deleted in the meantime.
+  return status === "processing";
 }
 
 /**
