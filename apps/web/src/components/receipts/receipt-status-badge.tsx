@@ -1,27 +1,27 @@
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { ReceiptStatus } from "@/lib/receipts/constants";
+import { STATUS_LABELS } from "@/lib/receipts/labels";
 
-const STATUS_BADGES: Record<
+const STATUS_VARIANTS: Record<
   ReceiptStatus,
-  { label: string; variant: "default" | "secondary" | "outline" | "destructive" }
+  "default" | "secondary" | "outline" | "destructive"
 > = {
-  uploading: { label: "Uploading", variant: "secondary" },
-  uploaded: { label: "Uploaded", variant: "default" },
-  processing: { label: "Processing", variant: "secondary" },
-  needs_review: { label: "Needs review", variant: "outline" },
-  saved: { label: "Saved", variant: "default" },
-  failed: { label: "Failed", variant: "destructive" },
+  uploading: "secondary",
+  uploaded: "default",
+  processing: "secondary",
+  needs_review: "outline",
+  saved: "default",
+  failed: "destructive",
 };
 
 export function ReceiptStatusBadge({ status }: { status: ReceiptStatus }) {
-  const badge = STATUS_BADGES[status];
   return (
-    <Badge variant={badge.variant}>
+    <Badge variant={STATUS_VARIANTS[status]}>
       {(status === "uploading" || status === "processing") && (
         <Loader2 className="animate-spin" />
       )}
-      {badge.label}
+      {STATUS_LABELS[status]}
     </Badge>
   );
 }
