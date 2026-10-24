@@ -25,11 +25,15 @@
   --border: oklch(0.9288 0.0126 255.5078);
   --input: oklch(0.9288 0.0126 255.5078);
   --ring: oklch(0.6959 0.1491 162.4796);
-  --chart-1: oklch(0.6959 0.1491 162.4796);
-  --chart-2: oklch(0.5960 0.1274 163.2254);
-  --chart-3: oklch(0.7729 0.1535 163.2231);
-  --chart-4: oklch(0.8452 0.1299 164.9782);
-  --chart-5: oklch(0.9049 0.0895 164.1501);
+  /* Categorical chart palette (blue/orange/aqua/yellow/magenta), not the
+     brand green: a fixed-hue-order set that stays distinguishable under
+     color-vision deficiency. The previous values were all one hue (an
+     emerald ramp), which fails CVD separation for >1 series. */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
   --sidebar: oklch(0.9842 0.0034 247.8575);
   --sidebar-foreground: oklch(0.2795 0.0368 260.0310);
   --sidebar-primary: oklch(0.6959 0.1491 162.4796);
@@ -80,11 +84,11 @@
   --border: oklch(0.2866 0.0149 175.0558);
   --input: oklch(0.2866 0.0149 175.0558);
   --ring: oklch(0.7729 0.1535 163.2231);
-  --chart-1: oklch(0.7729 0.1535 163.2231);
-  --chart-2: oklch(0.6959 0.1491 162.4796);
-  --chart-3: oklch(0.5960 0.1274 163.2254);
-  --chart-4: oklch(0.4318 0.0865 166.9128);
-  --chart-5: oklch(0.3780 0.0730 168.9398);
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
   --sidebar: oklch(0.1626 0.0082 181.7283);
   --sidebar-foreground: oklch(0.9228 0.0070 174.3662);
   --sidebar-primary: oklch(0.7729 0.1535 163.2231);
