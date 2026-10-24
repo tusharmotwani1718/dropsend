@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Copy, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { ReceiptStatus } from "@/lib/receipts/constants";
 import { STATUS_LABELS } from "@/lib/receipts/labels";
@@ -7,12 +7,13 @@ const STATUS_VARIANTS: Record<
   ReceiptStatus,
   "default" | "secondary" | "outline" | "destructive"
 > = {
-  uploading: "secondary",
-  uploaded: "default",
-  processing: "secondary",
-  needs_review: "outline",
-  saved: "default",
-  failed: "destructive",
+  uploading: { label: "Uploading", variant: "secondary" },
+  uploaded: { label: "Uploaded", variant: "default" },
+  processing: { label: "Processing", variant: "secondary" },
+  needs_review: { label: "Needs review", variant: "outline" },
+  saved: { label: "Saved", variant: "default" },
+  duplicate: { label: "Probable duplicate", variant: "destructive" },
+  failed: { label: "Failed", variant: "destructive" },
 };
 
 export function ReceiptStatusBadge({ status }: { status: ReceiptStatus }) {
@@ -21,7 +22,8 @@ export function ReceiptStatusBadge({ status }: { status: ReceiptStatus }) {
       {(status === "uploading" || status === "processing") && (
         <Loader2 className="animate-spin" />
       )}
-      {STATUS_LABELS[status]}
+      {status === "duplicate" && <Copy />}
+      {badge.label}
     </Badge>
   );
 }

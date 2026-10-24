@@ -86,7 +86,27 @@ export function useReceipts({ all = false } = {}) {
             });
           }
 
-          scheduleRefresh();
+          const updated = payload.new;
+          setReceipts((current) => {
+            const index = current.findIndex((r) => r.id === updated.id);
+            if (index === -1) return current;
+            const next = [...current];
+            next[index] = { ...current[index], ...updated };
+            return next;
+          });
+
+          // New rows and newly verified images need a signed preview URL,
+          // which only the server can create, and newly extracted receipts
+          // need their extraction (and flagged duplicates the receipt they
+          // match), which aren't part of the receipts row.
+          if (
+            payload.eventType === "INSERT" ||
+            updated.status === "processing" ||
+            updated.status === "needs_review" ||
+            updated.status === "duplicate"
+          ) {
+            void refresh();
+          }
         },
       )
       .subscribe((status, err) => {

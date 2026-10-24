@@ -1,15 +1,8 @@
 "use client";
 
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  ExternalLink,
-  FileSearch,
-  ImageIcon,
-} from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { ExternalLink, FileSearch, ImageIcon } from "lucide-react";
+import { useState } from "react";
+import { DuplicateActions, DuplicateNote } from "@/components/receipts/duplicate-actions";
 import { ExtractionSheet } from "@/components/receipts/extraction-sheet";
 import { ReceiptActions } from "@/components/receipts/receipt-actions";
 import { ReceiptStatusBadge } from "@/components/receipts/receipt-status-badge";
@@ -41,8 +34,11 @@ import {
 } from "@/lib/receipts/constants";
 import { CATEGORY_LABELS, STATUS_LABELS } from "@/lib/receipts/labels";
 
-/** Statuses that have an extraction to view. */
-const EXTRACTED_STATUSES: ReceiptStatus[] = ["needs_review", "saved"];
+/**
+ * Statuses that can have an extraction to view. A duplicate only has one if
+ * it was flagged after OCR (not on an identical image).
+ */
+const EXTRACTED_STATUSES: ReceiptStatus[] = ["needs_review", "saved", "duplicate"];
 
 // `uploaded` is no longer used, so it isn't offered as a filter.
 const FILTER_STATUSES = RECEIPT_STATUSES.filter((status) => status !== "uploaded");
@@ -134,18 +130,10 @@ export function ReceiptsTable() {
   const [viewing, setViewing] = useState<ReceiptWithPreview | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const visible = useMemo(
-    () =>
-      sortReceipts(
-        receipts.filter(
-          (receipt) =>
-            (!category || receipt.extraction?.category === category) &&
-            (!status || receipt.status === status),
-        ),
-        sort,
-      ),
-    [receipts, category, status, sort],
-  );
+  function view(receipt: ReceiptWithPreview) {
+    setViewing(receipt);
+    setSheetOpen(true);
+  }
 
   if (loading) {
     return <ReceiptsTableSkeleton />;
@@ -241,24 +229,20 @@ export function ReceiptsTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {visible.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
-                  No receipts match these filters.
-                </TableCell>
-              </TableRow>
-            )}
-            {visible.map((receipt) => (
-              <ReceiptTableRow
-                key={receipt.id}
-                receipt={receipt}
-                onView={() => {
-                  setViewing(receipt);
-                  setSheetOpen(true);
-                }}
-                onChange={() => void refresh()}
-              />
-            ))}
+            {receipts.map((receipt) => {
+              const original = receipt.original
+                ? receipts.find((r) => r.id === receipt.original?.id)
+                : undefined;
+              return (
+                <ReceiptTableRow
+                  key={receipt.id}
+                  receipt={receipt}
+                  onView={() => view(receipt)}
+                  onViewOriginal={original && (() => view(original))}
+                  onChange={() => void refresh()}
+                />
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -315,10 +299,13 @@ function SortableHead({
 function ReceiptTableRow({
   receipt,
   onView,
+  onViewOriginal,
   onChange,
 }: {
   receipt: ReceiptWithPreview;
   onView: () => void;
+  /** Opens the receipt a flagged duplicate matches, if it's in the table. */
+  onViewOriginal?: () => void;
   onChange: () => void;
 }) {
   const { extraction } = receipt;
@@ -354,6 +341,14 @@ function ReceiptTableRow({
               title={receipt.error}
             >
               {receipt.error}
+            </span>
+          )}
+          {receipt.status === "duplicate" && (
+            <span className="max-w-56 text-xs text-muted-foreground">
+              <DuplicateNote
+                original={receipt.original}
+                onViewOriginal={onViewOriginal}
+              />
             </span>
           )}
         </div>
@@ -392,7 +387,11 @@ function ReceiptTableRow({
             <FileSearch />
             View extraction
           </Button>
-          <ReceiptActions receipt={receipt} showRetry={false} onChange={onChange} />
+          {receipt.status === "duplicate" ? (
+            <DuplicateActions receipt={receipt} onChange={onChange} />
+          ) : (
+            <ReceiptActions receipt={receipt} showRetry={false} onChange={onChange} />
+          )}
         </div>
       </TableCell>
     </TableRow>
